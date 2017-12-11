@@ -1,7 +1,5 @@
 
-#check all remote memchine date
+#检查远程主机时间和时区
 ansible all -m shell -a timedatectl
-
-ansible-playbook -i hosts_common deploy_common.yml
-
-ansible-playbook -i hosts_ocata deploy_ocata.yml
+#开始安装
+ansible-playbook -i hosts deploy_pike.yml
