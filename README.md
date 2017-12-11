@@ -1,30 +1,18 @@
-<<<<<<< HEAD
-# openstack_ocata_ansible
+# Install openstack pike use ansible 2.4 on ubuntu 16.04.3 with openvswitch 2.8
+# openstack pike ansible
 
 For install openstack ocata on ubuntu 16.04.2 with ansible2.3.2.0 （neutron use opensvswitch 2.6.2）
 
-使用ansible 2.3.2.0 在ubunut 16.04.2 64位系统上安装 openstack ocata ，其中neutron网络使用openvswitch 2.6.2
+使用ansible 2.4.2.0 在ubunut 16.04.3 64位系统上安装 openstack pike ，其中neutron网络使用openvswitch 2.8.0
 
-注1：此版本为在线安装版本，安装过程中需要下载依赖包及相应的软件包
+注1：此版本为在线安装版本，安装过程中需要下载依赖包及相应的软件包 如果安装过程缓慢或者不成功请挂代理
 
 注2：此版本支持自定义所有主机名、openstack组件密码，自动修改主机hosts
 
 
 部署拓扑 ：
-###
-### ansible---------------------switch
-###                                |
-###                                |
-###                                |
-###                                |
-###                                |
-###         ----------------------------------------------------------
-###         |              |           |           |         |        |
-###         |              |           |           |         |        |
-###         |              |           |           |         |        |
-###         |              |           |           |         |        |
-###     controller     compute1   compute2     compute3  compute4   compute5
-###     
+![image](https://github.com/yinghai9989/openstack-pike-ansible/blob/master/topo.png)
+   
 controller节点安装组件如下：
 
    - ntp
