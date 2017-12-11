@@ -1,0 +1,119 @@
+---
+
+- name: Create cinder database
+  mysql_db: 
+    name: "{{ cinder_db_name }}" 
+    state: present
+  tags:
+     - cinder
+
+- name: Create cinder user in database
+  mysql_user: 
+    name: "{{ cinder_db_user }}"
+    password: "{{ cinder_db_pass }}"
+    host: "{{ item }}"
+    priv: '*.*:ALL,GRANT'
+    state: present
+  with_items:
+    - "localhost"
+    - "%"
+  tags:
+     - cinder
+
+- name: Create a cinder user
+  os_user:
+    name: "{{ cinder_db_user }}"
+    password: "{{ cinder_db_pass }}"
+    domain: default
+    state: present
+  environment: "{{ admin_env }}"
+  tags:
+     - cinder
+
+- name: Add the admin role to the cinder user
+  os_user_role:
+    user: cinder
+    role: admin
+    project: service
+    state: present
+  environment: "{{ admin_env }}"
+  tags:
+     - cinder
+
+- name: Create the cinderv2 service entities
+  os_keystone_service:
+     state: present
+     name: cinderv2
+     service_type: volumev2
+     description: OpenStack Block Storage
+  environment: "{{ admin_env }}"
+  tags:
+     - cinder
+
+- name: Create the cinderv3 service entities
+  os_keystone_service:
+     state: present
+     name: cinderv3
+     service_type: volumev3
+     description: OpenStack Block Storage
+  environment: "{{ admin_env }}"
+  tags:
+     - cinder 
+
+- name: Create the Block Storage service API endpoints V2
+  shell: openstack endpoint create --region RegionOne volumev2 {{ item }}  http://{{ cinder_hostname }}:8776/v2/%\(project_id\)s
+  with_items:
+      - public
+      - internal
+      - admin
+  environment: "{{ admin_env }}"
+  tags:
+     - cinder
+
+- name: Create the Block Storage service API endpoints V3
+  shell: openstack endpoint create --region RegionOne volumev3 {{ item }}  http://{{ cinder_hostname }}:8776/v3/%\(project_id\)s
+  with_items:
+      - public
+      - internal
+      - admin
+  environment: "{{ admin_env }}"
+  tags:
+     - cinder
+
+- name: Install cinder packages
+  apt: 
+    name: "{{ item }}"
+    state: present
+  with_items:
+   - cinder-api
+   - cinder-scheduler
+   - python-cinderclient
+  tags:
+     - cinder
+
+- name: Configure cinder-api
+  template: 
+    src: cinder.j2 
+    dest: /etc/cinder/cinder.conf
+  notify:
+    - restart cinder-scheduler
+    - restart apache2
+  #changed_when: true
+  tags:
+     - cinder
+
+- name: Sync cinder database
+  shell: su -s /bin/sh -c "cinder-manage db sync" cinder
+  tags:
+     - cinder
+
+
+- meta: flush_handlers
+  tags: 
+     - cinder
+
+
+
+
+
+

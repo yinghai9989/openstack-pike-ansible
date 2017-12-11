@@ -1,0 +1,48 @@
+[DEFAULT]
+transport_url = rabbit://{{ rabbit_userid }}:{{ rabbit_pass }}@{{ controller_hostname }}
+rootwrap_config = /etc/cinder/rootwrap.conf
+api_paste_confg = /etc/cinder/api-paste.ini
+#iscsi_helper = tgtadm
+volume_name_template = volume-%s
+#volume_group = cinder-volumes
+verbose = True
+auth_strategy = keystone
+state_path = /var/lib/cinder
+#lock_path = /var/lock/cinder
+volumes_dir = /var/lib/cinder/volumes
+
+rpc_backend = rabbit
+my_ip = {{ vars['ansible_'+ mng]['ipv4']['address'] }}
+
+enabled_backends = lvm
+glance_host = {{ glance_hostname }}
+glance_api_servers = http://{{ controller_hostname }}:9292
+[oslo_messaging_rabbit]
+rabbit_hosts = {{ rabbit_hostname }}
+rabbit_userid = {{ rabbit_userid }}
+rabbit_password = {{ rabbit_pass }}
+
+[keystone_authtoken]
+auth_uri = http://{{ keystone_hostname }}:5000
+auth_url = http://{{ keystone_hostname }}:35357
+memcached_servers = {{ memcached_host }}:11211
+auth_type = password
+project_domain_id = default
+user_domain_id = default
+project_name = service
+username = cinder
+password = {{ cinder_pass }}
+
+[lvm]
+volume_driver = cinder.volume.drivers.lvm.LVMVolumeDriver
+volume_group = cinder-volumes
+iscsi_protocol = iscsi
+iscsi_helper = tgtadm
+
+[database]
+connection = mysql+pymysql://{{ cinder_db_user }}:{{ cinder_db_pass }}@{{ mysql_hostname }}/{{ cinder_db_name }}
+
+[oslo_concurrency]
+lock_path = /var/lib/cinder/tmp
+
+

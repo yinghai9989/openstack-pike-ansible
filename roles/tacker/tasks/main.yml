@@ -1,0 +1,130 @@
+--- 
+- name: Create tacker database
+  mysql_db:
+    name: tacker
+    state: present
+  tags:
+     - tacker
+- name: Create tacker user
+  mysql_user:
+    name: "{{ tacker_db_user }}"
+    password: "{{ tacker_db_pass }}"
+    host: "{{ item }}"
+    priv: "*.*:ALL,GRANT"
+    state: present
+  with_items:
+    - "localhost"
+    - "%"
+  tags:
+    - tacker
+- name: Create tacker user with admin privileges
+  os_user:
+    name: "{{ tacker_usename }}"
+    password: "{{ tacker_pass }}"
+    domain: default
+    state: present
+  environment: "{{ admin_env }}"
+  tags:
+     - tacker
+- name: Create tacker user with admin role
+  os_user_role:
+    user: tacker
+    role: admin
+    project: service
+    state: present
+  environment: "{{ admin_env }}"
+  tags:
+     - tacker
+- name: Create tacker service
+  os_keystone_service:
+     state: present
+     name: tacker
+     service_type: nfv-orchestration
+     description: Tacker Project
+  environment: "{{ admin_env }}"
+  tags:
+     - tacker
+- name: Provide an endpoint to tacker service
+  shell: openstack endpoint create --region RegionOne nfv-orchestration  {{ item }}  http://{{ controller_hostname }}:9890/
+  with_items:
+      - public
+      - internal
+      - admin
+  environment: "{{ admin_env }}"
+  tags:
+     - tacker
+- name: Clone tacker repository
+  git:
+    repo: 'https://github.com/openstack/tacker.git'
+    dest: /opt/tacker
+  tags:
+     - tacker
+- name: Install all tacker  requirements
+  pip:
+    requirements: /opt/tacker/requirements.txt
+  tags:
+     - tacker
+- name: Install tacker
+  shell: python setup.py install
+  args:
+    chdir: /opt/tacker
+  tags:
+     - tacker
+- name: Create ‘tacker’ directory in ‘/var/log’
+  file:
+    path: /var/log/tacker
+    state: directory
+  tags:
+     - tacker
+- name: Copy the tacker.conf file to “/usr/local/etc/tacker/” directory
+  template: 
+    src: tacker.j2
+    dest: /usr/local/etc/tacker/tacker.conf
+  tags:
+     - tacker
+- name: Populate Tacker database
+  shell: /usr/local/bin/tacker-db-manage --config-file /usr/local/etc/tacker/tacker.conf upgrade head
+  tags:
+     - tacker
+- name: Clone tacker-client repository
+  git:
+    repo: 'https://github.com/openstack/python-tackerclient.git'
+    dest: /opt/tackerclient
+  tags:
+     - tacker
+- name: Install tacker-client
+  shell: python setup.py install
+  args:
+    chdir: /opt/tackerclient
+  tags:
+     - tacker
+- name: Clone tacker-horizon repository
+  git:
+    repo: 'https://github.com/openstack/tacker-horizon.git'
+    dest: /opt/tacker-horizon
+  tags:
+     - tacker
+- name: Install horizon module
+  shell: python setup.py install
+  args:
+    chdir: /opt/tacker-horizon
+  tags:
+     - tacker
+- name: Enable tacker horizon in dashboard
+  shell: cp tacker_horizon/enabled/* /usr/share/openstack-dashboard/openstack_dashboard/enabled/
+  args:
+    chdir: /opt/tacker-horizon
+  tags:
+     - tacker
+- name: Restart Apache server
+  service:
+    name: apache2
+    state: restarted
+  tags:
+     - tacker
+- name: Starting Tacker server
+  shell: python /usr/local/bin/tacker-server --config-file /usr/local/etc/tacker/tacker.conf --log-file /var/log/tacker/tacker.log
+  tags:
+     - tacker1
+
+    

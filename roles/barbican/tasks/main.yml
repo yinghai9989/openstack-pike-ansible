@@ -1,0 +1,114 @@
+---
+
+- name: Create the barbican database
+  mysql_db:
+    name: barbican
+    state: present
+  tags:
+     - barbican
+- name: Grant proper access to the barbican database
+  mysql_user:
+    name: "{{ barbican_db_user }}"
+    password: "{{ barbican_db_pass }}"
+    host: "{{ item }}"
+    priv: "*.*:ALL,GRANT"
+    state: present
+  with_items:
+    - "localhost"
+    - "%"
+  tags:
+    - barbican
+- name: Grant proper access to the barbican database
+  os_user:
+    name: "{{ barbican_usename }}"
+    password: "{{ barbican_pass }}"
+    domain: default
+    state: present
+  environment: "{{ admin_env }}"
+  tags:
+     - barbican
+- name: Add the admin role to the barbican user
+  os_user_role:
+    user: barbican
+    role: admin
+    project: service
+    state: present
+  environment: "{{ admin_env }}"
+  tags:
+     - barbican
+- name: Create the creator role
+  os_keystone_role:
+    state: present
+    name: creator
+  environment: "{{ admin_env }}"
+  tags:
+     - barbican
+- name: Add the creator role to the barbican user
+  os_user_role:
+    user: barbican
+    role: creator
+    project: service
+    state: present
+  environment: "{{ admin_env }}"
+  tags:
+     - barbican
+- name: Create the barbican service entities
+  os_keystone_service:
+     state: present
+     name: barbican
+     service_type: key-manager
+     description: Key Manager
+  environment: "{{ admin_env }}"
+  tags:
+     - barbican
+- name: Create the Key Manager service API endpoints
+  shell: openstack endpoint create --region RegionOne key-manager {{ item }}  http://{{ controller_hostname }}:9311
+  with_items:
+      - public
+      - internal
+      - admin
+  environment: "{{ admin_env }}"
+  tags:
+     - barbican
+- name: Install the barbican  packages
+  apt: 
+    name: "{{ item }}"
+    state: present
+  with_items:
+      - barbican-api 
+      - barbican-keystone-listener 
+      - barbican-worker
+  tags:
+     - barbican
+- name: Edit the /etc/barbican/barbican.conf
+  template:
+    src: barbican.j2
+    dest: /etc/barbican/barbican.conf
+    backup: yes
+  environment: "{{ admin_env }}"
+  tags:
+     - barbican
+- name: Populate the Key Manager service database
+  shell: su -s /bin/sh -c "barbican-manage db upgrade" barbican
+  notify:
+    - restart openstack-barbican-api
+  environment: "{{ admin_env }}"
+  tags:
+     - barbican
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

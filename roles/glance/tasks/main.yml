@@ -1,12 +1,19 @@
 ---
 
 - name: Create glance database
-  mysql_db: name={{ glance_db_name }} state=present
+  mysql_db: 
+    name: '{{ glance_db_name }}' 
+    state: present
   tags:
      - glance
 
 - name: Create glance user in database
-  mysql_user: name={{ glance_db_user  }} password={{ glance_db_pass  }} host={{ item }} priv=*.*:ALL,GRANT state=present
+  mysql_user:
+    name: '{{ glance_db_user  }}' 
+    password: '{{ glance_db_pass  }}'
+    host: '{{ item }}'
+    priv: '*.*:ALL,GRANT'
+    state: present
   with_items:
     - "localhost"
     - "%"
@@ -14,13 +21,21 @@
      - glance
 
 - name: Create the glance user
-  os_user: name={{ glance_user }}  password={{ glance_user_pass }} domain=default state=present
+  os_user: 
+    name: '{{ glance_user }}'
+    password: '{{ glance_user_pass }}' 
+    domain: default
+    state: present
   environment: "{{ admin_env }}" 
   tags:
      - glance
 
 - name: Add the admin role to the glance user and service project
-  os_user_role: user={{ glance_user }} role=admin project=service state=present
+  os_user_role: 
+    user: '{{ glance_user }}'
+    role: admin 
+    project: service 
+    state: present
   environment: "{{ admin_env }}"
   tags:
      - glance
@@ -46,10 +61,14 @@
      - glance
 
 - name: Install glance packages
-  apt: name={{ item }} state=installed force=yes
+  apt: name={{ item }} state=latest force=yes
+  #apt:
+  #  name: {{ item }}
+  #  state: latest
+  #  force: yes
   with_items:
-   - glance
-   - python-glanceclient
+    - glance
+    - python-glanceclient
   tags:
      - glance
 
@@ -67,13 +86,13 @@
   changed_when: true
   tags:
      - glance
- 
-- meta: flush_handlers
-  tags:
-     - glance
 
 - name: Sync glance database
   shell: su -s /bin/sh -c "glance-manage db_sync" glance
+  tags:
+     - glance
+
+- meta: flush_handlers
   tags:
      - glance
 
@@ -83,10 +102,19 @@
      - glance
 
 - name: Add cirros image
-  os_image: name="cirros 0.3.4" container_format=bare state=present
-            filename=/root/cirros-0.3.4-x86_64-disk.img
-            disk_format=qcow2
-            is_public=yes
+  os_image: 
+    name: cirros 0.3.4
+    container_format: bare 
+    state: present
+    filename: /root/cirros-0.3.4-x86_64-disk.img
+    disk_format: qcow2
+    is_public: yes
+    kernel: cirros-vmlinuz
+    ramdisk: cirros-initrd
+    properties:
+      cpu_arch: x86_64
+      distro: ubuntu
   environment: "{{ admin_env }}"
   tags:
      - glance
+

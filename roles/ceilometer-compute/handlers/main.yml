@@ -1,0 +1,11 @@
+---
+
+- name: restart ceilometer-agent-compute
+  service: 
+    name: ceilometer-agent 
+    state: restarted
+
+- name: restart nova-compute
+  service:
+    name: nova-compute
+    state: restarted

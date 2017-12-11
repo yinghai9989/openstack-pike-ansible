@@ -1,0 +1,54 @@
+---
+
+- name: Clone repo from openstack
+  git:
+    repo: 'https://git.openstack.org/openstack/networking-sfc'
+    dest: /opt/networking-sfc
+  tags:
+     - networking-sfc
+- name: Install networking-sfc requirements
+  shell: git  origin/stable/pike && pip install -r requirements.txt
+  args:
+    chdir: /opt/networking-sfc
+  tags:
+     - networking-sfc
+- name: Install networking-sfc
+  shell: python setup.py install
+  args:
+    chdir: /opt/networking-sfc
+  tags:
+     - networking-sfc
+- name: Configure neutron.conf
+  lineinfile:
+    dest: /etc/neutron/neutron.conf
+    insertafter: '^\[DEFAULT]'
+    line: |
+       service_plugins = flow_classifier,sfc
+    backup: yes
+  tags:
+     - networking-sfc
+- name: Configure neutron.conf OVS
+  blockinfile:
+    path: /etc/neutron/neutron.conf
+    block: |
+     [sfc]
+     drivers = ovs
+     [flowclassifier]
+     drivers = ovs
+    backup: yes
+  tags:
+     - networking-sfc
+
+- name: Restart neutron-server
+  service: 
+    name: neutron-server
+    state: restarted
+  tags:
+     - networking-sfc
+- name: configured with neutron-db-manage
+  shell: neutron-db-manage --subproject networking-sfc upgrade head
+  environment: "{{ admin_env }}"
+  tags:
+      - networking-sfc
+
+

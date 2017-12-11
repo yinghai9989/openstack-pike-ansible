@@ -1,7 +1,9 @@
 ---
 
 - name: Create nova database
-  mysql_db: name={{ item }} state=present
+  mysql_db: 
+    name: "{{ item }}" 
+    state: present
   with_items:
     - nova_api
     - nova
@@ -10,7 +12,12 @@
      - nova
 
 - name: Create nova user in database (nova,nova_api,nova_cell0)
-  mysql_user: name={{ nova_db_user }} password={{ nova_db_pass }} host={{ item }}  priv=*.*:ALL,GRANT state=present
+  mysql_user: 
+    name: "{{ nova_db_user }}"
+    password: "{{ nova_db_pass }}"
+    host: "{{ item }}"
+    priv: "*.*:ALL,GRANT"
+    state: present
   with_items:
     - "localhost"
     - "%"
@@ -18,13 +25,21 @@
     - nova
 
 - name:  Create the nova user
-  os_user: name={{ nova_db_user }} password={{ nova_db_pass }} domain=default state=present
+  os_user:
+    name: "{{ nova_db_user }}"
+    password: "{{ nova_db_pass }}"
+    domain: default
+    state: present
   environment: "{{ admin_env }}"
   tags:
      - nova
 
 - name: Add the admin role to the nova user
-  os_user_role: user=nova role=admin project=service state=present
+  os_user_role:
+    user: nova
+    role: admin
+    project: service 
+    state: present
   environment: "{{ admin_env }}"
   tags:
      - nova
@@ -34,7 +49,7 @@
      state: present
      name: nova
      service_type: compute
-     description: OpenStack Image Service
+     description: OpenStack Compute
   environment: "{{ admin_env }}"
   tags:
      - nova
@@ -50,13 +65,21 @@
      - nova
 
 - name: Create a Placement service user 
-  os_user: name={{ placement_user }} password={{ placement_pass }} domain=default state=present
+  os_user: 
+    name: "{{ placement_user }}"
+    password: "{{ placement_pass }}"
+    domain: default
+    state: present
   environment: "{{ admin_env }}"
   tags:
      - nova
 
 - name: Add the Placement user to the service project with the admin role
-  os_user_role: user=placement role=admin project=service state=present
+  os_user_role: 
+    user: placement 
+    role: admin 
+    project: service
+    state: present
   environment: "{{ admin_env }}"
   tags:
      - nova
@@ -123,8 +146,11 @@
 
 - name: Populate the nova database
   shell: su -s /bin/sh -c "nova-manage db sync" nova
+  notify:
+    - restart nova-api
+    - restart nova-consoleauth
+    - restart nova-scheduler
+    - restart nova-conductor
+    - nova-novncproxy  
   tags:
      - nova
-
-- meta: flush_handlers
-

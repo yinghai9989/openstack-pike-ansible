@@ -1,0 +1,50 @@
+---
+
+- hosts: all
+  roles:
+   - sshauth
+   - common
+
+- hosts: controller
+  roles:
+   - hostname
+   - ntp
+   - mariadb
+   - rabbitmq
+   - memcache
+   - etcd
+   - shade
+   - keystone
+   - glance
+   - nova
+   - neutron
+   - dashboard
+   - swift
+   - flavor
+   - cinder
+   - aodh
+   - heat
+   - barbican
+   - tacker
+   - networking-sfc
+   - mistral
+   - ceilometer  #There are problems with installation
+   
+
+- hosts: computes
+  roles:
+   - hostname-compute
+   - ntp-compute
+   - nova-compute
+   - neutron-compute
+   - networking-sfc-compute
+   - ceilometer-compute   #There are problems with installation
+
+- hosts: swift-storage
+  roles:
+   - ntp-compute
+   - swift-storage
+
+- hosts: cinder-storage
+  roles:
+   - cinder-storage

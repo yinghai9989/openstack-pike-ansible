@@ -1,5 +1,5 @@
 ---
-- name: Install NTP Server On Controller Node
+- name: Install ntp server on controller node
   apt:
     name: chrony
     state: present

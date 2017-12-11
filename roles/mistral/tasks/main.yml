@@ -1,0 +1,73 @@
+---
+
+- name: Install Mistral packages
+  apt:
+    name: "{{ item }}"
+    state: present
+  with_items:
+      - python-dev 
+      - python-setuptools 
+      - python-pip 
+      - libffi-dev
+      - libxslt1-dev
+      - libxml2-dev 
+      - libyaml-dev 
+      - libssl-dev
+      - tox
+  tags:
+     - mistral
+- name: Create  mistral directory on controller node /opt
+  file: 
+    path: /opt/mistral
+    state: directory
+    mode: 0755
+  tags:
+     - mistral
+
+- name: Clone the mistral repo and go to the mistral repo directory
+  git:
+    repo: 'https://github.com/openstack/mistral.git'
+    dest: /opt/mistral
+  tags:
+     - mistral
+
+- name: CREATE DATABASE mistral
+  mysql_db:
+    name: mistral
+    state: present
+  tags:
+     - mistral
+- name: Grant mistral all privileges on mistral
+  mysql_user:
+    name: "{{ mistral_db_user }}"
+    password: "{{ mistral_db_pass }}"
+    host: "{{ item }}"
+    priv: "*.*:ALL,GRANT"
+    state: present
+  with_items:
+    - "localhost"
+    - "%"
+  tags:
+    - mistral
+- name: Register Mistral service  on Keystone
+  shell: openstack service create workflowv2 --name mistral --description 'OpenStack Workflow service'
+  environment: "{{ admin_env }}"
+  tags:
+     - mistral
+
+- name: Register Mistral endpoints on Keystone
+  shell: openstack endpoint create workflowv2 {{ item }}  http://{{ controller_hostname }}:8989/v2
+  with_items:
+      - public
+      - internal
+      - admin
+  environment: "{{ admin_env }}"
+  tags:
+     - mistral
+- name: Clone the repository into your local OpenStack directory
+  git:
+    repo: 'https://github.com/openstack/mistral-dashboard.git'
+    dest: /opt/mistral-dashboard
+  tags:
+     - mistral
+ 

@@ -1,0 +1,100 @@
+---
+
+
+
+- name: Create heat database
+  mysql_db: name={{ heat_db_name }} state=present
+
+
+
+
+- name: Create heat user in database for localhost
+  mysql_user: name={{ heat_db_user }} password={{ heat_db_pass }} host=localhost  priv=*.*:ALL,GRANT state=present
+
+
+
+- name: Create heat user in database
+  mysql_user: name={{ heat_db_user }} password={{ heat_db_pass }} host=%  priv=*.*:ALL,GRANT state=present
+
+
+
+- name: Install heat packages
+  apt: name={{ item }} state=installed force=yes
+  with_items:
+   - heat-api 
+   - heat-api-cfn 
+   - heat-engine
+   - python-heatclient
+
+
+- name: Configure heat
+  template: src=heat.j2 dest=/etc/heat/heat.conf
+  notify:
+   - restart heat-api
+   - restart heat-api-cfn
+   - restart heat-engine
+  changed_when: true
+
+
+
+- name: Sync heat database
+  shell: su -s /bin/sh -c "heat-manage db_sync" heat
+
+
+- meta: flush_handlers
+
+
+- name: Create heat domain
+  shell: openstack domain create --description "Stack projects and users" heat
+  environment:
+        OS_TOKEN: "{{ keystone_admin_token }}"
+        OS_URL: "http://{{ keystone_hostname }}:35357/v3"
+        OS_IDENTITY_API_VERSION: "3"
+  ignore_errors: True
+
+- name: Create heat_domain_admin user
+  shell: openstack  user create --domain heat --password {{ heat_pass }} heat_domain_admin
+  environment:
+        OS_TOKEN: "{{ keystone_admin_token }}"
+        OS_URL: "http://{{ keystone_hostname }}:35357/v3"
+        OS_IDENTITY_API_VERSION: "3"
+  ignore_errors: True
+
+
+- name: add admin role to heat_domain_admin user
+  shell: openstack  role add --domain heat --user heat_domain_admin admin
+  environment:
+        OS_TOKEN: "{{ keystone_admin_token }}"
+        OS_URL: "http://{{ keystone_hostname }}:35357/v3"
+        OS_IDENTITY_API_VERSION: "3"
+  ignore_errors: True
+
+- name: Create heat_stack_owner role
+  shell: openstack  role create heat_stack_owner
+  environment:
+        OS_TOKEN: "{{ keystone_admin_token }}"
+        OS_URL: "http://{{ keystone_hostname }}:35357/v3"
+        OS_IDENTITY_API_VERSION: "3"
+  ignore_errors: True
+
+- name: add heat_stack_owner role to demo user
+  shell: openstack role add --project demo --user demo heat_stack_owner
+  environment:
+        OS_TOKEN: "{{ keystone_admin_token }}"
+        OS_URL: "http://{{ keystone_hostname }}:35357/v3"
+        OS_IDENTITY_API_VERSION: "3"
+  ignore_errors: True
+
+
+- name: Create heat_stack_user role
+  shell: openstack role create heat_stack_user
+  environment:
+        OS_TOKEN: "{{ keystone_admin_token }}"
+        OS_URL: "http://{{ keystone_hostname }}:35357/v3"
+        OS_IDENTITY_API_VERSION: "3"
+  ignore_errors: True
+
+
+
+
+

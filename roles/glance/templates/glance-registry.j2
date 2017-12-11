@@ -763,6 +763,7 @@ connection = mysql+pymysql://{{ glance_db_user }}:{{ glance_db_pass }}@{{ mysql_
 [keystone_authtoken]
 auth_uri = http://{{ keystone_hostname }}:5000
 auth_url = http://{{ keystone_hostname }}:35357
+memcached_servers = {{ memcached_host }}:11211
 auth_plugin = password
 project_domain_id = default
 user_domain_id = default

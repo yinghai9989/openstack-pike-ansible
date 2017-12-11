@@ -1,0 +1,97 @@
+---
+
+ - name: Create etcd group
+   group:
+     name: etcd
+     state: present
+     system: yes
+   tags:
+      - etcd
+
+ - name: Create etcd user
+   user: 
+     name: etcd
+     shell: /bin/false
+     home: /var/lib/etcd
+     group: etcd
+     system: yes
+     state: present
+   tags:
+      - etcd
+
+ - name: Create the necessary /etc/etcd directorie
+   file: 
+     path: /etc/etcd
+     state: directory
+     owner: etcd
+     group: etcd
+   tags:
+      - etcd
+
+ - name: Create the necessary /var/lib/etcd directorie
+   file:
+     path: /var/lib/etcd
+     state: directory
+     owner: etcd
+     group: etcd
+   tags:
+      - etcd
+ 
+ - name: Download etcd 
+   become: yes
+   become_user: root
+   get_url:
+     url: '{{etcd_tgz_url}}'
+     dest: /opt/{{etcd_tgz}}
+     timeout: '{{etcd_download_timeout_seconds}}'
+     mode: 0644
+   tags:
+      - etcd
+
+ - name: Unachive etcd
+   become: yes
+   become_user: root
+   unarchive:
+     remote_src: yes
+     src: /opt/{{etcd_tgz}}
+     dest: /opt
+   tags:
+      - etcd
+
+ - name: Copy etcd and etcdctl
+   become: yes
+   become_user: root
+   copy: 
+     src: '/opt/{{etcd_name}}/{{item}}'
+     dest: '/usr/bin/{{item}}'
+     mode: 0771
+     remote_src: yes
+   with_items:
+     - etcd
+     - etcdctl  
+   tags:
+      - etcd
+
+ - name: Create and edit the /etc/etcd/etcd.conf.yml
+   template: 
+     src: etcd.conf.yml.j2 
+     dest: /etc/etcd/etcd.conf.yml
+     owner: etcd
+     group: etcd
+   tags:
+      - etcd
+
+ - name: Create and edit the /lib/systemd/system/etcd.service
+   template: 
+     src: etcd.service.j2 
+     dest: /lib/systemd/system/etcd.service
+   tags:
+      - etcd
+
+ - name: Enable and start the etcd service
+   systemd: 
+     name: etcd
+     state: started
+     enabled: yes
+   tags:
+      - etcd

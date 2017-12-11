@@ -1,0 +1,114 @@
+---
+
+- name: Create the aodh database
+  mysql_db:
+    name: aodh
+    state: present
+  tags:
+     - aodh
+
+- name: Grant proper access to the aodh database
+  mysql_user:
+    name: "{{ aodh_db_user }}"
+    password: "{{ aodh_db_pass }}"
+    host: "{{ item }}"
+    priv: "*.*:ALL,GRANT"
+    state: present
+  with_items:
+    - "localhost"
+    - "%"
+  tags:
+    - aodh
+
+- name: Create the aodh user
+  os_user:
+    name: "{{ aodh_db_user }}"
+    password: "{{ aodh_db_pass }}"
+    domain: default
+    state: present
+  environment: "{{ admin_env }}"
+  tags:
+     - aodh
+
+- name: Add the admin role to the aodh user
+  os_user_role:
+    user: aodh
+    role: admin
+    project: service
+    state: present
+  environment: "{{ admin_env }}"
+  tags:
+     - aodh
+
+- name: Create the aodh service entity
+  os_keystone_service:
+     state: present
+     name: aodh
+     service_type: alarming
+     description: Telemetry
+  environment: "{{ admin_env }}"
+  tags:
+     - aodh
+
+- name: Create the Alarming service API endpoints
+  shell: openstack endpoint create --region RegionOne alarming {{ item }} http://{{ aodh_hostname }}:8042
+  with_items:
+      - public
+      - internal
+      - admin
+  environment: "{{ admin_env }}"
+  tags:
+     - aodh
+
+- name: Install aodh the packages
+  apt:
+    name: "{{ item }}"
+    state: present
+  with_items:
+      - aodh-api
+      - aodh-evaluator
+      - aodh-notifier
+      - aodh-listener
+      - aodh-expirer
+      - python-aodhclient
+  tags:
+     - aodh
+
+- name: Configure the aodh.conf
+  template: 
+    src: aodh.j2
+    dest: /etc/aodh/aodh.conf
+    backup: yes
+  tags:
+     - aodh
+
+- name: Run the aodh-dbsync script to initialize the database
+  shell: aodh-dbsync --config-file /etc/aodh/aodh.conf
+  notify:
+#    - restart aodh-api
+    - restart aodh-evaluator
+    - restart aodh-notifier
+    - restart aodh-listener
+  tags:
+     - aodh1
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

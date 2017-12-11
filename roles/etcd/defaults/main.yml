@@ -1,0 +1,6 @@
+---
+etcd_version: v3.2.7
+etcd_platform: linux-amd64
+etcd_mirror: https://github.com/coreos/etcd/releases/download
+etcd_install_dir: /usr/bin/etcd
+etcd_download_timeout_seconds: 600

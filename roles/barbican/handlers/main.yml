@@ -1,0 +1,5 @@
+---
+- name: restart openstack-barbican-api
+  service:
+    name: openstack-barbican-api
+    state: restarted

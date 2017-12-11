@@ -1,6 +1,5 @@
 ---
 
-
 - name: Config the external net interface
   blockinfile:
     path: /etc/network/interfaces
@@ -28,12 +27,19 @@
      - neutron
 
 - name: Create neutron database
-  mysql_db: name={{ neutron_db_name }} state=present
+  mysql_db: 
+    name: "{{ neutron_db_name }}"
+    state: present
   tags:
      - neutron
 
 - name: Create neutron user in database
-  mysql_user: name={{ neutron_db_user }} password={{ neutron_db_pass }} host={{ item }} priv=*.*:ALL,GRANT state=present
+  mysql_user: 
+    name: "{{ neutron_db_user }}"
+    password: "{{ neutron_db_pass }}"
+    host: "{{ item }}"
+    priv: '*.*:ALL,GRANT'
+    state: present
   with_items:
       - "localhost"
       - "%"
@@ -41,23 +47,31 @@
      - neutron
 
 - name: Create the neutron user
-  os_user: name={{ neutron_db_user }} password={{ neutron_db_pass }} domain=default state=present
+  os_user: 
+    name: "{{ neutron_db_user }}"
+    password: "{{ neutron_db_pass }}"
+    domain: default
+    state: present
   environment: "{{ admin_env }}"
   tags:
      - neutron
 
 - name: Add the admin role to the neutron user
-  os_user_role: user=neutron role=admin project=service state=present
+  os_user_role: 
+    user: neutron
+    role: admin
+    project: service
+    state: present
   environment: "{{ admin_env }}"
   tags:
      - neutron
 
 - name: Create the neutron service entity
   os_keystone_service:
-     state: present
-     name: neutron
-     service_type: network
-     description: OpenStack Networking
+    state: present
+    name: neutron
+    service_type: network
+    description: OpenStack Networking
   environment: "{{ admin_env }}"
   tags:
      - neutron
@@ -73,7 +87,9 @@
      - neutron
 
 - name: Install neutron controller packages
-  apt: name={{ item }} state=installed force=yes
+  apt: 
+    name: "{{ item }}"
+    state: present
   with_items: 
    - neutron-server 
    - neutron-plugin-ml2 
@@ -86,7 +102,9 @@
      - neutron
 
 - name: Configure neutron
-  template: src=neutron.j2 dest=/etc/neutron/neutron.conf
+  template: 
+    src: neutron.j2
+    dest: /etc/neutron/neutron.conf
   notify:
    - restart neutron-server
   changed_when: true
@@ -95,36 +113,49 @@
 
 
 - name: Configure neutron-l3-agent
-  template: src=l3_agent.j2 dest=/etc/neutron/l3_agent.ini
+  template: 
+    src: l3_agent.j2 
+    dest: /etc/neutron/l3_agent.ini
   notify: restart neutron-l3-agent
   changed_when: true
   tags:
      - neutron
 
 - name: Configure neutron-dhcp-agent
-  template: src=dhcp_agent.j2 dest=/etc/neutron/dhcp_agent.ini
+  template: 
+    src: dhcp_agent.j2
+    dest: /etc/neutron/dhcp_agent.ini
   notify: restart neutron-dhcp-agent
   changed_when: true
   tags:
      - neutron
 
 - name: Configure neutron-dnsmasq
-  template: src=dnsmasq-neutron.j2 dest=/etc/neutron/dnsmasq-neutron.conf
+  template: 
+    src: dnsmasq-neutron.j2 
+    dest: /etc/neutron/dnsmasq-neutron.conf
   tags:
      - neutron
 
 - name: Configure neutron-metadata-agent
-  template: src=metadata_agent.j2 dest=/etc/neutron/metadata_agent.ini
+  template: 
+    src: metadata_agent.j2 
+    dest: /etc/neutron/metadata_agent.ini
   notify: restart neutron-metadata-agent
-
+  tags:
+     - neutron
 
 - name: Configure neutron-plugin-ml2
-  template: src=ml2_conf.j2 dest=/etc/neutron/plugins/ml2/ml2_conf.ini
+  template: 
+    src: ml2_conf.j2 
+    dest: /etc/neutron/plugins/ml2/ml2_conf.ini
   tags:
      - neutron
 
 - name: Configure openvswitch_agent
-  template: src=openvswitch_agent.j2 dest=/etc/neutron/plugins/ml2/openvswitch_agent.ini
+  template:
+    src: openvswitch_agent.j2 
+    dest: /etc/neutron/plugins/ml2/openvswitch_agent.ini
   notify: 
      - restart openvswitch-switch
      - restart neutron-openvswitch-agent
@@ -144,12 +175,17 @@
 
 
 - name: Add br-ex
-  openvswitch_bridge: bridge=br-ex state=present
+  openvswitch_bridge: 
+    bridge: br-ex 
+    state: present
   tags:
      - neutron
 
 - name: Add port to br-ex
-  openvswitch_port: bridge=br-ex port={{ external }} state=present
+  openvswitch_port: 
+    bridge: br-ex
+    port: "{{ external }}"
+    state: present
   tags:
      - neutron
 

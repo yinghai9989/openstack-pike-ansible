@@ -1,0 +1,156 @@
+---
+- name: Create ceilometer database
+  mysql_db:
+    name: "{{ ceilometer_db_name }}"
+    state: present
+  tags:
+     - ceilometer
+
+- name: Create ceilometer user in database
+  mysql_user:
+    name: "{{ ceilometer_db_user }}"
+    password: "{{ ceilometer_db_pass }}"
+    host: "{{ item }}"
+    priv: "*.*:ALL,GRANT"
+    state: present
+  with_items:
+    - "localhost"
+    - "%"
+  tags:
+    - ceilometer
+
+- name: Create the ceilometer user
+  os_user:
+    name: "{{ ceilometer_username }}"
+    password: "{{ ceilometer_pass }}"
+    domain: default
+    state: present
+  environment: "{{ admin_env }}"
+  tags:
+     - ceilometer
+
+- name: Add the admin role to the ceilometer user
+  os_user_role:
+    user: ceilometer
+    role: admin
+    project: service
+    state: present
+  environment: "{{ admin_env }}"
+  tags:
+     - ceilometer
+
+- name: Create the ceilometer service entity
+  os_keystone_service:
+     state: present
+     name: ceilometer
+     service_type: metering
+     description: Telemetry
+  environment: "{{ admin_env }}"
+  tags:
+     - ceilometer
+
+- name: Create the gnocchi user
+  os_user:
+    name: "{{ gnocchi_usename }}"
+    password: "{{ gnocchi_pass }}"
+    domain: default
+    state: present
+  environment: "{{ admin_env }}"
+  tags:
+     - ceilometer
+
+- name: Create the gnocchi service entity
+  os_keystone_service:
+     state: present
+     name: "{{ gnocchi_usename }}"
+     service_type: metric
+     description: Metric Service
+  environment: "{{ admin_env }}"
+  tags:
+     - ceilometer
+
+- name: Create the Metric service API endpoints
+  shell: openstack endpoint create --region RegionOne metric {{ item }}  http://{{ controller_hostname }}:8041
+  environment: "{{ admin_env }}"
+  with_items:
+     - public
+     - internal
+     - admin
+  tags:
+     - ceilometer
+
+- name: Create the gnocchi database
+  mysql_db:
+    name: gnocchi
+    state: present
+  tags:
+     - ceilometer
+- name: Grant proper access to the gnocchi database
+  mysql_user:
+    name: "{{ gnocchi_db_user }}"
+    password: "{{ gnocchi_db_pass }}"
+    host: "{{ item }}"
+    priv: "*.*:ALL,GRANT"
+    state: present
+  with_items:
+    - "localhost"
+    - "%"
+  tags:
+    - ceilometer
+
+- name: Install the Gnocchi package
+  apt:
+    name: "{{ item }}"
+    state: present
+  with_items:
+     - gnocchi-api 
+     - gnocchi-metricd
+     - python-gnocchiclient
+  tags:
+     - ceilometer
+- name: Edit the /etc/gnocchi/gnocchi.conf
+  template:
+     src: gnocchi.j2
+     dest: /etc/gnocchi/gnocchi.conf
+     backup: yes
+  tags:
+     - ceilometer
+
+- name: Initialize Gnocchi
+  shell: gnocchi-upgrade
+  environment: "{{ admin_env }}"
+  notify:
+   - restart gnocchi-api 
+   - restart gnocchi-metricd
+  tags:
+     - ceilometer
+  
+- name: Install the ceilometer packages
+  apt:
+    name: "{{ item }}"
+    state: present
+  with_items:
+     - ceilometer-agent-notification
+     - ceilometer-agent-central
+  tags:
+     - ceilometer
+
+- name: Edit the /etc/ceilometer/ceilometer.conf
+  template:
+     src: ceilometer.j2
+     dest: /etc/ceilometer/ceilometer.conf
+     backup: yes
+  tags:
+     - ceilometer
+
+- name: Create Ceilometer resources in Gnocchi
+  shell: ceilometer-upgrade --skip-metering-database
+  environment: "{{ admin_env }}"
+  notify:
+     - restart ceilometer-agent-central
+     - restart ceilometer-agent-notification
+  tags:
+     - ceilometer
+
+
+

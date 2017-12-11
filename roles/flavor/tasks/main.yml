@@ -1,24 +1,23 @@
 ---
 
-
 - name: "Create tiny flavor"
   os_nova_flavor:
     state: present
     name: m0.tiny
     ram: 512
     vcpus: 1
-    disk: 1
+    disk: 10
     ephemeral: 0
     flavorid: 0
   environment: "{{ admin_env }}"
   tags:
      - flavor
 
-- name: "Create small flavor"
+- name: "Create s-small flavor"
   os_nova_flavor:
     state: present
     name: m1.small
-    ram: 2048
+    ram: 1024
     vcpus: 1
     disk: 20
     ephemeral: 0
@@ -27,12 +26,12 @@
   tags:
      - flavor
 
-- name: "Create medium flavor"
+- name: "Create small flavor"
   os_nova_flavor:
     state: present
-    name: m2.medium
-    ram: 4096
-    vcpus: 2
+    name: m2.small
+    ram: 2048
+    vcpus: 1
     disk: 20
     ephemeral: 0
     flavorid: 2
@@ -40,15 +39,54 @@
   tags:
      - flavor
 
-- name: "Create large flavor"
+- name: "Create s-medium flavor"
   os_nova_flavor:
     state: present
-    name: m3.large
-    ram: 8192
-    vcpus: 4
+    name: m3.medium
+    ram: 2048
+    vcpus: 2
     disk: 20
     ephemeral: 0
     flavorid: 3
+  environment: "{{ admin_env }}"
+  tags:
+     - flavor
+
+- name: "Create medium flavor"
+  os_nova_flavor:
+    state: present
+    name: m4.medium
+    ram: 4096
+    vcpus: 2
+    disk: 20
+    ephemeral: 0
+    flavorid: 4
+  environment: "{{ admin_env }}"
+  tags:
+     - flavor
+
+- name: "Create s-large flavor"
+  os_nova_flavor:
+    state: present
+    name: m5.slarge
+    ram: 4096
+    vcpus: 2
+    disk: 30
+    ephemeral: 0
+    flavorid: 5
+  environment: "{{ admin_env }}"
+  tags:
+     - flavor
+
+- name: "Create large flavor"
+  os_nova_flavor:
+    state: present
+    name: m6.large
+    ram: 6144
+    vcpus: 4
+    disk: 30
+    ephemeral: 0
+    flavorid: 6
   environment: "{{ admin_env }}"
   tags:
      - flavor 
@@ -56,12 +94,25 @@
 - name: "Create xlarge flavor"
   os_nova_flavor:
     state: present
-    name: m4.xlarge
-    ram: 16384
-    vcpus: 8
-    disk: 20
+    name: m7.xlarge
+    ram: 8192
+    vcpus: 4
+    disk: 30
     ephemeral: 0
-    flavorid: 4
+    flavorid: 7
+  environment: "{{ admin_env }}"
+  tags:
+     - flavor
+
+- name: "Create xxlarge flavor"
+  os_nova_flavor:
+    state: present
+    name: m8.xxlarge
+    ram: 8192
+    vcpus: 8
+    disk: 40
+    ephemeral: 0
+    flavorid: 8
   environment: "{{ admin_env }}"
   tags:
      - flavor 

@@ -1,0 +1,42 @@
+---
+
+
+- name: Install cinder-volume packages
+  apt: 
+    name: "{{ item }}" 
+    state: present
+  with_items:
+   - cinder-volume 
+   - python-mysqldb
+   - lvm2
+  tags:
+    - cinder-storage
+
+- name: Create the LVM physical volume {{ cinder_volume_dev }}
+  shell: pvcreate {{ cinder_volume_dev }} -y
+  tags:
+     - cinder-storage
+
+- name: Create the LVM volume group cinder-volumes
+  shell: vgcreate cinder-volumes /dev/sdb
+  tags:
+     - cinder-storage
+
+- name: Configure LVM
+  template: 
+    src: lvm.j2 
+    dest: /etc/lvm/lvm.conf
+  tags: 
+     - cinder-storage
+
+
+- name: Configure cinder-volume
+  template: 
+    src: cinder.j2
+    dest: /etc/cinder/cinder.conf
+  notify:
+   - restart cinder-volume
+   - restart tgt
+  changed_when: true
+  tags:
+     - cinder-storage

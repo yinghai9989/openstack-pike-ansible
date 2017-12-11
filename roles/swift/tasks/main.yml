@@ -2,13 +2,21 @@
 
 
 - name: Create the swift user
-  os_user: name={{ swift_db_user }} password={{ swift_db_passwd }} domain=default state=present
+  os_user: 
+    name: "{{ swift_db_user }}"
+    password: "{{ swift_db_passwd }}"
+    domain: default
+    state: present
   environment: "{{ admin_env }}"
   tags:
      - swift
 
 - name: Add the admin role to the swift user
-  os_user_role: user=swift role=admin project=service state=present
+  os_user_role:
+    user: swift
+    role: admin
+    project: service 
+    state: present
   environment: "{{ admin_env }}"
   tags:
      - swift
@@ -24,7 +32,7 @@
      - swift
 
 - name: Create the Object Storage service API endpoints public  internal
-  shell: openstack endpoint create --region RegionOne object-store {{ item }} http://{{ swift_hostname }}:8080/v1/AUTH_%\(tenant_id\)s
+  shell: openstack endpoint create --region RegionOne object-store {{ item }} http://{{ swift_hostname }}:8080/v1/AUTH_%\(project_id\)s
   with_items:
       - public
       - internal
@@ -60,17 +68,27 @@
      - swift
 
 - name: Configure proxy-server
-  template: src=proxy-server.j2 dest=/etc/swift/proxy-server.conf owner=root group=swift mode=0644
+  template: 
+    src: proxy-server.j2 
+    dest: /etc/swift/proxy-server.conf 
+    owner: root 
+    group: swift 
+    mode: 0644
   tags:
      - swift
 
 - name: Configure swift
-  template: src=swift.j2 dest=/etc/swift/swift.conf owner=root group=swift mode=0644
+  template: 
+    src: swift.j2
+    dest: /etc/swift/swift.conf 
+    owner: root
+    group: swift 
+    mode: 0644
   tags:
      - swift
 
-- name: run swift-ring-builder for accounts, containers, and objects
-  command: swift-ring-builder {{ item }}.builder create 10 2 1 
+- name: Run swift-ring-builder for accounts, containers, and objects
+  command: swift-ring-builder {{ item }}.builder create 10 3 1 
            chdir=/etc/swift 
            creates=/etc/swift/{{ item }}.ring.gz 
   with_items:
@@ -80,7 +98,7 @@
   tags:
      - swift
 
-- name: check if account.ring.gz already exists
+- name: Check if account.ring.gz already exists
   #stat: path=/etc/swift/{{ item }}.ring.gz
   command: ls /etc/swift/account.ring.gz
   register: rings_exist
@@ -93,8 +111,8 @@
   tags:
      - swift
 
-- name: build account ring for node1
-  command: swift-ring-builder account.builder add --region 1 --zone 1 --ip {{ swift_storage_node1 }} --port 6202 --device {{ swift_dev_name }} --weight {{ swift_dev_size }}
+- name: Build account ring for node1 Disk1
+  command: swift-ring-builder account.builder add --region 1 --zone 1 --ip {{ swift_storage_node1 }} --port 6202 --device {{ swift_dev_name1 }} --weight {{ swift_dev_size }}
            chdir=/etc/swift
   with_sequence: count=3
   when: rings_exist.rc > 0
@@ -102,8 +120,8 @@
   tags:
      - swift
 
-- name: build account ring for node2
-  command: swift-ring-builder account.builder add --region 1 --zone 2 --ip {{ swift_storage_node2 }} --port 6202 --device {{ swift_dev_name }} --weight {{ swift_dev_size }}
+- name: Build account ring for node1 Disk2
+  command: swift-ring-builder account.builder add --region 1 --zone 1 --ip {{ swift_storage_node1 }} --port 6202 --device {{ swift_dev_name2 }} --weight {{ swift_dev_size }}
            chdir=/etc/swift
   with_sequence: count=3
   when: rings_exist.rc > 0
@@ -111,8 +129,8 @@
   tags:
      - swift
 
-- name: build container ring for node1
-  command: swift-ring-builder container.builder add --region 1 --zone 1 --ip {{ swift_storage_node1 }} --port 6201 --device {{ swift_dev_name }} --weight {{ swift_dev_size }}
+- name: Build account ring for node2 Disk1
+  command: swift-ring-builder account.builder add --region 1 --zone 2 --ip {{ swift_storage_node2 }} --port 6202 --device {{ swift_dev_name1 }} --weight {{ swift_dev_size }}
            chdir=/etc/swift
   with_sequence: count=3
   when: rings_exist.rc > 0
@@ -120,8 +138,8 @@
   tags:
      - swift
 
-- name: build container ring for node2
-  command: swift-ring-builder container.builder add --region 1 --zone 2 --ip {{ swift_storage_node2 }} --port 6201 --device {{ swift_dev_name }} --weight {{ swift_dev_size }}
+- name: Build account ring for node2 Disk2
+  command: swift-ring-builder account.builder add --region 1 --zone 2 --ip {{ swift_storage_node2 }} --port 6202 --device {{ swift_dev_name2 }} --weight {{ swift_dev_size }}
            chdir=/etc/swift
   with_sequence: count=3
   when: rings_exist.rc > 0
@@ -129,8 +147,8 @@
   tags:
      - swift
 
-- name: build object ring for node1
-  command: swift-ring-builder object.builder add --region 1 --zone 1 --ip {{ swift_storage_node1 }} --port 6200 --device {{ swift_dev_name }} --weight  {{ swift_dev_size }}
+- name: Build container ring for node1 Disk1
+  command: swift-ring-builder container.builder add --region 1 --zone 1 --ip {{ swift_storage_node1 }} --port 6201 --device {{ swift_dev_name1 }} --weight {{ swift_dev_size }}
            chdir=/etc/swift
   with_sequence: count=3
   when: rings_exist.rc > 0
@@ -138,8 +156,62 @@
   tags:
      - swift
 
-- name: build object ring for node2
-  command: swift-ring-builder object.builder add --region 1 --zone 2 --ip {{ swift_storage_node2 }} --port 6200 --device {{ swift_dev_name }} --weight {{ swift_dev_size }}
+- name: Build container ring for node1 Disk2
+  command: swift-ring-builder container.builder add --region 1 --zone 1 --ip {{ swift_storage_node1 }} --port 6201 --device {{ swift_dev_name2 }} --weight {{ swift_dev_size }}
+           chdir=/etc/swift
+  with_sequence: count=3
+  when: rings_exist.rc > 0
+  ignore_errors: true
+  tags:
+     - swift
+
+- name: Build container ring for node2 Disk1
+  command: swift-ring-builder container.builder add --region 1 --zone 2 --ip {{ swift_storage_node2 }} --port 6201 --device {{ swift_dev_name1 }} --weight {{ swift_dev_size }}
+           chdir=/etc/swift
+  with_sequence: count=3
+  when: rings_exist.rc > 0
+  ignore_errors: true
+  tags:
+     - swift
+
+- name: Build container ring for node2 Disk2
+  command: swift-ring-builder container.builder add --region 1 --zone 2 --ip {{ swift_storage_node2 }} --port 6201 --device {{ swift_dev_name2 }} --weight {{ swift_dev_size }}
+           chdir=/etc/swift
+  with_sequence: count=3
+  when: rings_exist.rc > 0
+  ignore_errors: true
+  tags:
+     - swift
+
+- name: Build object ring for node1 Disk1
+  command: swift-ring-builder object.builder add --region 1 --zone 1 --ip {{ swift_storage_node1 }} --port 6200 --device {{ swift_dev_name1 }} --weight  {{ swift_dev_size }}
+           chdir=/etc/swift
+  with_sequence: count=3
+  when: rings_exist.rc > 0
+  ignore_errors: true
+  tags:
+     - swift
+
+- name: Build object ring for node1 Disk2
+  command: swift-ring-builder object.builder add --region 1 --zone 1 --ip {{ swift_storage_node1 }} --port 6200 --device {{ swift_dev_name2 }} --weight  {{ swift_dev_size }}
+           chdir=/etc/swift
+  with_sequence: count=3
+  when: rings_exist.rc > 0
+  ignore_errors: true
+  tags:
+     - swift
+
+- name: Build object ring for node2 Disk1
+  command: swift-ring-builder object.builder add --region 1 --zone 2 --ip {{ swift_storage_node2 }} --port 6200 --device {{ swift_dev_name1 }} --weight {{ swift_dev_size }}
+           chdir=/etc/swift
+  with_sequence: count=3
+  when: rings_exist.rc > 0
+  ignore_errors: true
+  tags:
+     - swift
+
+- name: Build object ring for node2 Disk2
+  command: swift-ring-builder object.builder add --region 1 --zone 2 --ip {{ swift_storage_node2 }} --port 6200 --device {{ swift_dev_name2 }} --weight {{ swift_dev_size }}
            chdir=/etc/swift
   with_sequence: count=3
   when: rings_exist.rc > 0
@@ -159,9 +231,11 @@
   tags:
      - swift
 
-# This will fetch from all proxies, if there are more than one and put the rings files in the same spot, which is Ok but not perfect
 - name: grab resulting *.ring.gz files and put them on all proxy and storage nodes
-  fetch: dest=fetch/{{ item }}.ring.gz flat=yes src=/etc/swift/{{ item }}.ring.gz
+  fetch: 
+    src: "/etc/swift/{{ item }}.ring.gz"   
+    dest: "fetch/{{ item }}.ring.gz" 
+    flat: yes 
   when: rebalance.changed
   with_items:
     - account
@@ -171,7 +245,12 @@
      - swift
 
 - name: Set permissions on /etc/swift directory
-  file: path=/etc/swift state=directory owner=root group=swift recurse=yes
+  file: 
+    path: /etc/swift 
+    state: directory 
+    owner: root 
+    group: swift 
+    recurse: yes
   notify:
     - restart swift-proxy
     - restart memcached

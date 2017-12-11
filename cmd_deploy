@@ -1,4 +1,6 @@
 
+#check all remote memchine date
+ansible all -m shell -a timedatectl
 
 ansible-playbook -i hosts_common deploy_common.yml
 

@@ -1,12 +1,18 @@
 ---
 
 - name: restart neutron-openvswitch-agent
-  service: name=neutron-openvswitch-agent state=restarted
-
+  service: 
+    name: neutron-openvswitch-agent 
+    state: restarted
 
 - name: restart openvswitch-switch
-  service: name=openvswitch-switch state=restarted
+  service: 
+    name: openvswitch-switch 
+    state: restarted
 
-
+- name: restart  nova-compute
+  service: 
+    name: nova-compute
+    state: restarted
 
 

@@ -1,0 +1,20 @@
+---
+- name: restart aodh-api
+  service:
+    name: aodh-api
+    state: restarted
+
+- name: restart aodh-evaluator
+  service:
+    name: aodh-evaluator
+    state: restarted
+
+- name: restart aodh-notifier
+  service:
+    name: aodh-notifier
+    state: restarted
+
+- name: restart aodh-listener
+  service:
+    name: aodh-listener
+    state: restarted

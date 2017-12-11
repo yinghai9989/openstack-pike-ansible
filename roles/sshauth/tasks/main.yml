@@ -1,0 +1,42 @@
+---
+
+- name: Create RSA key on remote for root
+  user: name=root generate_ssh_key=yes
+  tags:
+     - sshauth
+
+- name: Fetch remote id_rsa.pub to local
+  fetch: src=/root/.ssh/id_rsa.pub dest=/tmp/{{ vars['ansible_'+ mng]['ipv4']['address'] }}id_rsa.tmp flat=yes
+  tags:
+     - sshauth
+
+- name: Merge loccal id_rsa.pub to local tmp  authorized_keys
+  shell: |
+       cat /tmp/{{ vars['ansible_'+ mng]['ipv4']['address'] }}id_rsa.tmp  >> /tmp/authorized_keys
+  delegate_to: localhost  
+  tags:
+     - sshauth
+
+- name: sync local tmp authorized_keys to remote
+  blockinfile:
+    block: "{{ lookup('file', '/tmp/authorized_keys') }}"
+    dest: "/root/.ssh/authorized_keys"
+    backup: yes 
+  tags:
+     - sshauth
+
+- name: Remove local temp authorized_keys
+  file:
+    path: /tmp/authorized_keys
+    state: absent  
+  delegate_to: localhost
+  tags:
+     - sshauth
+
+- name: Remove local temp RSA key
+  file:
+    path: /tmp/{{ vars['ansible_'+ mng]['ipv4']['address'] }}id_rsa.tmp
+    state: absent   
+  delegate_to: localhost
+  tags:
+     - sshauth

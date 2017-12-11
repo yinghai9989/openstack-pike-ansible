@@ -500,10 +500,13 @@ LOGGING = {
     # django.db.backends will still log unless it is disabled explicitly.
     'disable_existing_loggers': False,
     'formatters': {
+        'console': {
+            'format': '%(levelname)s %(name)s %(message)s'
+        },
         'operation': {
             # The format of "%(message)s" is defined by
             # OPERATION_LOG_OPTIONS['format']
-            'format': '%(asctime)s %(message)s'
+            'format': '%(message)s'
         },
     },
     'handlers': {
@@ -515,6 +518,7 @@ LOGGING = {
             # Set the level to "DEBUG" for verbose output logging.
             'level': 'INFO',
             'class': 'logging.StreamHandler',
+            'formatter': 'console',
         },
         'operation': {
             'level': 'INFO',
@@ -762,7 +766,8 @@ SECURITY_GROUP_RULES = {
 REST_API_REQUIRED_SETTINGS = ['OPENSTACK_HYPERVISOR_FEATURES',
                               'LAUNCH_INSTANCE_DEFAULTS',
                               'OPENSTACK_IMAGE_FORMATS',
-                              'OPENSTACK_KEYSTONE_DEFAULT_DOMAIN']
+                              'OPENSTACK_KEYSTONE_DEFAULT_DOMAIN',
+                              'CREATE_IMAGE_DEFAULTS']
 
 # Additional settings can be made available to the client side for
 # extensibility by specifying them in REST_API_ADDITIONAL_SETTINGS

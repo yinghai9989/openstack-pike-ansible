@@ -69,9 +69,12 @@ user = swift
 # log_statsd_sample_rate_factor = 1.0
 # log_statsd_metric_prefix =
 #
-# Use a comma separated list of full url (http://foo.bar:1234,https://foo.bar)
+# Use a comma separated list of full URL (http://foo.bar:1234,https://foo.bar)
 # cors_allow_origin =
 # strict_cors_mode = True
+#
+# Comma separated list of headers to expose through Access-Control-Expose-Headers
+# cors_expose_headers =
 #
 # client_timeout = 60
 # eventlet_debug = false
@@ -92,10 +95,7 @@ user = swift
 # This sample pipeline uses tempauth and is used for SAIO dev work and
 # testing. See below for a pipeline using keystone.
 #pipeline = catch_errors gatekeeper healthcheck proxy-logging cache container_sync bulk tempurl ratelimit tempauth copy container-quotas account-quotas slo dlo versioned_writes proxy-logging proxy-server
-
-#pipeline = catch_errors gatekeeper healthcheck proxy-logging cache container_sync bulk ratelimit authtoken keystoneauth container-quotas account-quotas slo dlo versioned_writes proxy-logging proxy-server
 pipeline = catch_errors gatekeeper healthcheck proxy-logging cache container_sync bulk ratelimit authtoken keystoneauth container-quotas account-quotas slo dlo versioned_writes proxy-logging proxy-server
-
 
 # The following pipeline shows keystone integration. Comment out the one
 # above and uncomment this one. Additional steps for integrating keystone are
@@ -125,7 +125,7 @@ account_autocreate = True
 # Timeouts from these requests can be recovered from so setting this to
 # something lower than node_timeout would provide quicker error recovery
 # while allowing for a longer timeout for non-recoverable requests (PUTs).
-# Defaults to node_timeout, should be overriden if node_timeout is set to a
+# Defaults to node_timeout, should be overridden if node_timeout is set to a
 # high number to prevent client timeouts from firing before the proxy server
 # has a chance to retry.
 # recoverable_node_timeout = node_timeout
@@ -169,13 +169,14 @@ account_autocreate = True
 # Depth of the proxy put queue.
 # put_queue_depth = 10
 #
-# Storage nodes can be chosen at random (shuffle), by using timing
-# measurements (timing), or by using an explicit match (affinity).
-# Using timing measurements may allow for lower overall latency, while
-# using affinity allows for finer control. In both the timing and
-# affinity cases, equally-sorting nodes are still randomly chosen to
+# During GET and HEAD requests, storage nodes can be chosen at random
+# (shuffle), by using timing measurements (timing), or by using an explicit
+# region/zone match (affinity). Using timing measurements may allow for lower
+# overall latency, while using affinity allows for finer control. In both the
+# timing and affinity cases, equally-sorting nodes are still randomly chosen to
 # spread load.
 # The valid values for sorting_method are "affinity", "shuffle", or "timing".
+# This option may be overridden in a per-policy configuration section.
 # sorting_method = shuffle
 #
 # If the "timing" sorting_method is used, the timings will only be valid for
@@ -202,34 +203,54 @@ account_autocreate = True
 # replicas for the ring being used for the request.
 # request_node_count = 2 * replicas
 #
-# Which backend servers to prefer on reads. Format is r<N> for region
-# N or r<N>z<M> for region N, zone M. The value after the equals is
-# the priority; lower numbers are higher priority.
+# Specifies which backend servers to prefer on reads. Format is a comma
+# separated list of affinity descriptors of the form <selection>=<priority>.
+# The <selection> may be r<N> for selecting nodes in region N or r<N>z<M> for
+# selecting nodes in region N, zone M. The <priority> value should be a whole
+# number that represents the priority to be given to the selection; lower
+# numbers are higher priority.
 #
 # Example: first read from region 1 zone 1, then region 1 zone 2, then
 # anything in region 2, then everything else:
 # read_affinity = r1z1=100, r1z2=200, r2=300
 # Default is empty, meaning no preference.
+# This option may be overridden in a per-policy configuration section.
 # read_affinity =
 #
-# Which backend servers to prefer on writes. Format is r<N> for region
-# N or r<N>z<M> for region N, zone M. If this is set, then when
-# handling an object PUT request, some number (see setting
-# write_affinity_node_count) of local backend servers will be tried
-# before any nonlocal ones.
+# Specifies which backend servers to prefer on object writes. Format is a comma
+# separated list of affinity descriptors of the form r<N> for region N or
+# r<N>z<M> for region N, zone M. If this is set, then when handling an object
+# PUT request, some number (see setting write_affinity_node_count) of local
+# backend servers will be tried before any nonlocal ones.
 #
 # Example: try to write to regions 1 and 2 before writing to any other
 # nodes:
 # write_affinity = r1, r2
 # Default is empty, meaning no preference.
+# This option may be overridden in a per-policy configuration section.
 # write_affinity =
 #
-# The number of local (as governed by the write_affinity setting)
-# nodes to attempt to contact first, before any non-local ones. You
-# can use '* replicas' at the end to have it use the number given
-# times the number of replicas for the ring being used for the
+# The number of local (as governed by the write_affinity setting) nodes to
+# attempt to contact first on writes, before any non-local ones. The value
+# should be an integer number, or use '* replicas' at the end to have it use
+# the number given times the number of replicas for the ring being used for the
 # request.
+# This option may be overridden in a per-policy configuration section.
 # write_affinity_node_count = 2 * replicas
+#
+# The number of local (as governed by the write_affinity setting) handoff nodes
+# to attempt to contact on deletion, in addition to primary nodes.
+#
+# Example: in geographically distributed deployment of 2 regions, If
+# replicas=3, sometimes there may be 1 primary node and 2 local handoff nodes
+# in one region holding the object after uploading but before object replicated
+# to the appropriate locations in other regions. In this case, include these
+# handoff nodes to send request when deleting object could help make correct
+# decision for the response. The default value 'auto' means Swift will
+# calculate the number automatically, the default value is
+# (replicas - len(local_primary_nodes)). This option may be overridden in a
+# per-policy configuration section.
+# write_affinity_handoff_delete_count = auto
 #
 # These are the headers whose values will only be shown to swift_owners. The
 # exact definition of a swift_owner is up to the auth system in use, but
@@ -247,6 +268,19 @@ account_autocreate = True
 # Work only with ionice_class.
 # ionice_class =
 # ionice_priority =
+
+# Some proxy-server configuration options may be overridden on a per-policy
+# basis by including per-policy config section(s). The value of any option
+# specified a per-policy section will override any value given in the
+# proxy-server section for that policy only. Otherwise the value of these
+# options will be that specified in the proxy-server section.
+# The section name should refer to the policy index, not the policy name.
+# [proxy-server:policy:<policy index>]
+# sorting_method =
+# read_affinity =
+# write_affinity =
+# write_affinity_node_count =
+# write_affinity_handoff_delete_count =
 
 [filter:tempauth]
 use = egg:swift#tempauth
@@ -288,7 +322,7 @@ use = egg:swift#tempauth
 # you can set this to false.
 # allow_overrides = true
 #
-# This specifies what scheme to return with storage urls:
+# This specifies what scheme to return with storage URLs:
 # http, https, or default (chooses based on what the server is running as)
 # This can be useful with an SSL load balancer in front of a non-SSL server.
 # storage_url_scheme = default
@@ -327,16 +361,15 @@ user_test5_tester5 = testing5 service
 # is recommended.
 # 1. http://docs.openstack.org/developer/keystonemiddleware/middlewarearchitecture.html#configuration
 #
-# [filter:authtoken]
-
 [filter:authtoken]
+
 paste.filter_factory = keystonemiddleware.auth_token:filter_factory
 auth_uri = http://{{ keystone_hostname }}:5000
 auth_url = http://{{ keystone_hostname }}:35357
 memcached_servers = {{ keystone_hostname }}:11211
 auth_type = password
-project_domain_name = default
-user_domain_name = default
+project_domain_id = default
+user_domain_id = default
 project_name = service
 username = {{ swift_user }}
 password = {{ swift_pass }}
@@ -346,6 +379,12 @@ delay_auth_decision = True
 # auth_uri = http://keystonehost:5000
 # auth_url = http://keystonehost:35357
 # auth_plugin = password
+# The following credentials must match the Keystone credentials for the Swift
+# service and may need to be changed to match your Keystone configuration. The
+# example values shown here assume a user named 'swift' with admin role on a
+# project named 'service', both being in the Keystone domain with id 'default'.
+# Refer to the keystonemiddleware documentation link above [1] for other
+# examples.
 # project_domain_id = default
 # user_domain_id = default
 # project_name = service
@@ -365,7 +404,6 @@ delay_auth_decision = True
 [filter:keystoneauth]
 use = egg:swift#keystoneauth
 operator_roles = admin,user
-
 # use = egg:swift#keystoneauth
 # The reseller_prefix option lists account namespaces that this middleware is
 # responsible for. The prefix is placed before the Keystone project id.
@@ -522,7 +560,10 @@ use = egg:swift#domain_remap
 # set log_headers = false
 # set log_address = /dev/log
 #
+# Specify the storage_domain that match your cloud, multiple domains
+# can be specified separated by a comma
 # storage_domain = example.com
+
 # path_root = v1
 
 # Browsers can convert a host header to lowercase, so check that reseller
@@ -559,6 +600,12 @@ use = egg:swift#cname_lookup
 # storage_domain = example.com
 #
 # lookup_depth = 1
+#
+# Specify the nameservers to use to do the CNAME resolution. If unset, the
+# system configuration is used. Multiple nameservers can be specified
+# separated by a comma. Default port 53 can be overriden. IPv6 is accepted.
+# Example: 127.0.0.1, 127.0.0.2, 127.0.0.3:5353, [::1], [::1]:5353
+# nameservers =
 
 # Note: Put staticweb just after your auth filter(s) in the pipeline
 [filter:staticweb]
@@ -717,10 +764,17 @@ use = egg:swift#slo
 # Time limit on GET requests (seconds)
 # max_get_time = 86400
 #
-# When deleting with ?multipart-manifest=delete, multiple deletes may be
-# executed in parallel. Avoid setting this too high, as it gives clients a
-# force multiplier which may be used in DoS attacks. The suggested range is
-# between 2 and 10.
+# When creating an SLO, multiple segment validations may be executed in
+# parallel. Further, multiple deletes may be executed in parallel when deleting
+# with ?multipart-manifest=delete. Use this setting to limit how many
+# subrequests may be executed concurrently. Avoid setting it too high, as it
+# gives clients a force multiplier which may be used in DoS attacks. The
+# suggested range is between 2 and 10.
+# concurrency = 2
+#
+# This may be used to separately tune validation and delete concurrency values.
+# Default is to use the concurrency value from above; all of the same caveats
+# apply regarding recommended ranges.
 # delete_concurrency = 2
 
 # Note: Put after auth and staticweb in the pipeline.
@@ -763,8 +817,8 @@ use = egg:swift#gatekeeper
 
 [filter:container_sync]
 use = egg:swift#container_sync
-# Set this to false if you want to disallow any full url values to be set for
-# any new X-Container-Sync-To headers. This will keep any new full urls from
+# Set this to false if you want to disallow any full URL values to be set for
+# any new X-Container-Sync-To headers. This will keep any new full URLs from
 # coming in, but won't change any existing values already in the cluster.
 # Updating those will have to be done manually, as knowing what the true realm
 # endpoint should be cannot always be guessed.
@@ -820,12 +874,14 @@ use = egg:swift#versioned_writes
 # If you don't put it in the pipeline, it will be inserted for you.
 [filter:copy]
 use = egg:swift#copy
-# Set object_post_as_copy = false to turn on fast posts where only the metadata
-# changes are stored anew and the original data file is kept in place. This
-# makes for quicker posts.
-# When object_post_as_copy is set to True, a POST request will be transformed
-# into a COPY request where source and destination objects are the same.
-# object_post_as_copy = true
+# By default object POST requests update metadata without modification of the
+# original data file
+# Set this to True to enable the old, slow behavior wherein object POST
+# requests are transformed into COPY requests where source and destination are
+# the same. All client-visible behavior (save response time) should be
+# identical.
+# This option is deprecated and will be ignored in a future release.
+# object_post_as_copy = false
 
 # Note: To enable encryption, add the following 2 dependent pieces of crypto
 # middleware to the proxy-server pipeline. They should be to the right of all

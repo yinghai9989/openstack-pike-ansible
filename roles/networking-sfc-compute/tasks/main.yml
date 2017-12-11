@@ -1,0 +1,41 @@
+---
+
+- name: Clone repo from openstack
+  git:
+    repo: 'https://git.openstack.org/openstack/networking-sfc'
+    dest: /opt/networking-sfc
+  tags:
+     - networking-sfc
+
+- name: Install networking-sfc requirements
+  shell: git  checkout stable/pike && pip install -r requirements.txt
+  args:
+    chdir: /opt/networking-sfc
+  tags:
+     - networking-sfc
+
+- name: Install networking-sfc
+  shell: python setup.py install
+  args:
+    chdir: /opt/networking-sfc
+  tags:
+     - networking-sfc
+
+- name: Configure compute node ml2_conf.ini
+  blockinfile:
+    path: /etc/neutron/plugins/ml2/ml2_conf.ini
+    block: |
+     [agent]
+     extensions = sfc
+    backup: yes
+  tags:
+     - networking-sfc
+
+- name: Restart neutron-openvswitch-agent
+  service: 
+    name: neutron-openvswitch-agent
+    state: restarted
+  tags:
+     - networking-sfc
+
+

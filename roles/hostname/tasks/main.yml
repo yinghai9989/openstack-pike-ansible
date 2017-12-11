@@ -2,6 +2,7 @@
 
 - name: Mange Controller Node Hostname
   hostname: name={{ controller_hostname }}
+  environment: "{{ python3_env }}"
   tags:
     - hostname
 

@@ -1,0 +1,53 @@
+[DEFAULT]
+transport_url = rabbit://{{ rabbit_userid }}:{{ RABBIT_PASS }}@{{ controller_hostname }}
+rootwrap_config = /etc/cinder/rootwrap.conf
+api_paste_confg = /etc/cinder/api-paste.ini
+iscsi_helper = tgtadm
+volume_name_template = volume-%s
+volume_group = cinder-volumes
+verbose = True
+auth_strategy = keystone
+state_path = /var/lib/cinder
+lock_path = /var/lock/cinder
+volumes_dir = /var/lib/cinder/volumes
+
+auth_strategy = keystone
+my_ip = {{ vars['ansible_'+ mng]['ipv4']['address'] }}
+glance_host = {{ glance_hostname }}
+osapi_volume_listen = {{ cinder_hostname }}
+
+glance_api_version = 2
+
+rpc_backend = rabbit
+[oslo_messaging_rabbit]
+rabbit_host = {{ rabbit_hostname }}
+rabbit_userid = {{ rabbit_userid }}
+rabbit_password = {{ rabbit_pass }}
+
+notification_driver = messagingv2
+
+[keymgr]
+encryption_auth_url = http://{{ keystone_hostname }}:5000/v3
+
+[oslo_concurrency]
+lock_path = /var/lib/cinder/tmp
+
+[keystone_authtoken]
+auth_uri = http://{{ keystone_hostname }}:5000
+auth_url = http://{{ keystone_hostname }}:35357
+memcached_servers = {{ keystone_hostname }}:11211
+auth_host = {{ keystone_hostname }}
+#auth_port = 35357
+#auth_protocol = http
+auth_type = password
+project_domain_id = default
+user_domain_id = default
+project_name = service
+username = cinder
+password = {{ cinder_pass }}
+
+
+[database]
+connection = mysql+pymysql://{{ cinder_db_user }}:{{ cinder_db_pass }}@{{ mysql_hostname }}/{{ cinder_db_name }}
+
+

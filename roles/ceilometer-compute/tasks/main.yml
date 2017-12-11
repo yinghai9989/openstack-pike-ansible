@@ -1,0 +1,43 @@
+---
+- name: Install  the ceilometer packages on compute node
+  apt:
+    name: ceilometer-agent-compute
+    state: present
+  tags:
+     - ceilometer-compute
+
+- name: Edit the /etc/ceilometer/ceilometer.conf
+  template: 
+    src: ceilometer.j2
+    dest: /etc/ceilometer/ceilometer.conf
+    backup: yes
+  tags:
+     - ceilometer-compute
+
+- name: Edit the /etc/nova/nova.conf file 
+  lineinfile:
+    dest: /etc/nova/nova.conf
+    insertafter: '^\[DEFAULT]' 
+    line: |
+       instance_usage_audit = True
+       instance_usage_audit_period = hour
+       notify_on_state_change = vm_and_task_state
+    backup: yes
+  tags:
+     - ceilometer-compute
+- name: Edit the /etc/nova/nova.conf file oslo_messaging_notifications
+  lineinfile:
+    dest: /etc/nova/nova.conf
+    insertafter: '^\[oslo_messaging_notifications]'
+    line: 'driver = messagingv2'
+    backup: yes
+  tags:
+     - ceilometer-compute
+
+- meta: flush_handlers
+  tags: 
+     - ceilometer-compute
+        
+
+
+     

@@ -1,0 +1,160 @@
+---
+
+
+
+- name: Create heat database
+  mysql_db: 
+    name: "{{ heat_db_name }}"
+    state: present
+  tags:
+     - heat
+
+- name: Create heat user in database for localhost
+  mysql_user: 
+    name: "{{ heat_db_user }}"
+    password: "{{ heat_db_pass }}"
+    host: "{{ item }}"
+    priv: "*.*:ALL,GRANT"
+    state: present
+  with_items:
+       - "localhost"
+       - "%" 
+  tags:
+     - heat 
+
+- name: Create the heat user
+  os_user:
+    name: "{{ heat_db_user }}"
+    password: "{{ heat_db_pass }}"
+    domain: default
+    state: present
+  environment: "{{ admin_env }}"
+  tags:
+     - heat
+
+- name: Add the admin role to the heat user
+  os_user_role:
+    user: heat
+    role: admin
+    project: service
+    state: present
+  environment: "{{ admin_env }}"
+  tags:
+     - heat
+
+- name: Create the heat service entities
+  os_keystone_service:
+    state: present
+    name: heat
+    service_type: orchestration
+    description: Orchestration
+  environment: "{{ admin_env }}"
+  tags:
+     - heat
+
+- name: Create the heat-cfn service entities
+  os_keystone_service:
+    state: present
+    name: heat-cfn
+    service_type: cloudformation
+    description: Orchestration
+  environment: "{{ admin_env }}"
+  tags:
+     - heat
+
+- name: Create the Orchestration service API endpoints
+  shell: openstack endpoint create --region RegionOne orchestration {{ item }} http://{{ heat_hostname }}:8004/v1/%\(tenant_id\)s
+  with_items:
+      - public
+      - internal
+      - admin
+  environment: "{{ admin_env }}"
+  tags:
+     - heat
+
+- name: Create the cloudformation service API endpoints
+  shell: openstack endpoint create --region RegionOne cloudformation {{ item }} http://{{ heat_hostname }}:8000/v1
+  with_items:
+      - public
+      - internal
+      - admin
+  environment: "{{ admin_env }}"
+  tags:
+     - heat
+
+- name: Create the heat domain that contains projects and users for stacks
+  shell: openstack domain create --description "Stack projects and users" heat
+  environment: "{{ admin_env }}"
+  tags:
+     - heat
+
+- name: Create the heat_domain_admin user to manage projects and users in the heat domain
+  shell: openstack  user create --domain heat --password {{ heat_pass }} heat_domain_admin
+  environment: "{{ admin_env }}"
+  tags:
+     - heat
+
+- name: Add the admin role to the heat_domain_admin user in the heat
+  shell: openstack role add --domain heat --user-domain heat --user heat_domain_admin admin
+  environment: "{{ admin_env }}"
+  tags:
+     - heat
+
+- name: Create the heat_stack_owner role
+  shell: openstack role create heat_stack_owner
+  environment: "{{ admin_env }}"
+  tags:
+     - heat
+
+- name: Add the heat_stack_owner role to the demo project and user to enable stack management by the demo user
+  shell: openstack role add --project demo --user demo heat_stack_owner
+  environment: "{{ admin_env }}"
+  tags:
+     - heat
+
+- name: Create the heat_stack_user role
+  shell: openstack role create heat_stack_user
+  environment: "{{ admin_env }}"
+  tags:
+     - heat
+
+- name: Install heat packages
+  apt: 
+    name: "{{ item }}"
+    state: present
+  with_items:
+   - heat-api 
+   - heat-api-cfn 
+   - heat-engine
+   - python-heatclient
+  tags:
+     - heat
+
+- name: Configure heat
+  template: 
+     src: heat.j2 
+     dest: /etc/heat/heat.conf
+     backup: yes
+  notify:
+   - restart heat-api
+   - restart heat-api-cfn
+   - restart heat-engine
+  changed_when: true
+  tags:
+    - heat
+
+
+- name: Sync heat database
+  shell: su -s /bin/sh -c "heat-manage db_sync" heat
+  tags:
+     - heat
+
+- meta: flush_handlers
+  tags:
+    - heat
+
+
+
+
+
+

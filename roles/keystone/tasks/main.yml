@@ -1,7 +1,5 @@
 ---
 
-
-
 - name: Create keystone db
   mysql_db: name={{ keystone_db_name }} state=present
   tags:
@@ -19,6 +17,8 @@
   apt: name={{ item }} state=installed force=yes
   with_items:
     - keystone
+    - apache2 
+    - libapache2-mod-wsgi
   tags:
      - keystone  
 
@@ -59,7 +59,10 @@
      - keystone
 
 - name: Remove the default SQLite database on Controller Node
-  command: rm -f /var/lib/keystone/keystone.db
+  file:
+    path: /var/lib/keystone/keystone.db
+    state: absent
+  #command: rm -f /var/lib/keystone/keystone.db
   tags:
      - keystone
 

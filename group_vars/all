@@ -1,29 +1,29 @@
 IP_RANGS: 172.171.0.0/20
 
 RABBIT_PASS: stack2017
-rabbit_hostname: controller81
+rabbit_hostname: controller92
 rabbit_userid: openstack
 rabbit_pass: stack2017
 
 
 mysql_root_db_pass: stack2017
 
-controller_hostname: controller81
-controller_ip: 172.171.8.1
+controller_hostname: controller92
+controller_ip: 172.171.9.2
 
-MYSQL_BIND_ADDRESS: 172.171.8.1
-mysql_hostname: controller81
-memcached_host: controller81
+MYSQL_BIND_ADDRESS: 172.171.9.2
+mysql_hostname: controller92
+memcached_host: controller92
 
 keystone_admin_token: stack2017
-keystone_hostname: controller81
+keystone_hostname: controller92
 keystone_protocol: http
 keystone_admin_port: 35357
 keystone_db_name: keystone
 keystone_db_user: keystone
 keystone_db_pass: stack2017
 
-glance_hostname: controller81
+glance_hostname: controller92
 glance_user: glance
 glance_user_pass: stack2017
 glance_db_name: glance
@@ -31,36 +31,73 @@ glance_db_user: glance
 glance_db_pass: stack2017
 
 
-cinder_hostname: controller81
+cinder_hostname: controller92
 cinder_db_name: cinder
 cinder_db_user: cinder
 cinder_db_pass: stack2017
 cinder_volume_dev: /dev/sdb
+cinder_volume_disk: sdb
 
-nova_hostname: controller81
+nova_hostname: controller92
 nova_db_name: nova
 nova_api_db_name: nova_api
 nova_db_user: nova
 nova_db_pass: stack2017
 
-placement_hostname: controller81
+placement_hostname: controller92
 placement_user: placement
 placement_pass: stack2017
 
+aodh_hostname: controller92
+aodh_db_name: aodh
+aodh_db_user: aodh
+aodh_db_pass: stack2017
 
-neutron_hostname: controller81
+
+neutron_hostname: controller92
 neutron_db_name: neutron
 neutron_db_user: neutron
 neutron_db_pass: stack2017
 
-heat_hostname: controller81
+heat_hostname: controller92
 heat_db_name: heat
 heat_db_user: heat
 heat_db_pass: stack2017
 stack_domain_admin: heat_domain_admin
 heat_domain_pass: stack2017
 
-dashboard_hostname: controller81
+ceilometer_hostname: controller92
+ceilometer_username: ceilometer
+ceilometer_pass: stack2017
+ceilometer_db_name: ceilometer
+ceilometer_db_user: ceilometer
+ceilometer_db_pass: stack2017
+
+gnocchi_usename: gnocchi
+gnocchi_pass: stack2017
+gnocchi_db_name: gnocchi
+gnocchi_db_user: gnocchi
+gnocchi_db_pass: stack2017
+
+mistral_usename: mistral
+mistral_pass: stack2017
+mistral_db_name: mistral
+mistral_db_user: mistral
+mistral_db_pass: stack2017
+
+barbican_usename: barbican
+barbican_pass: stack2017
+barbican_db_name: barbican
+barbican_db_user: barbican
+barbican_db_pass: stack2017
+
+tacker_usename: tacker
+tacker_pass: stack2017
+tacker_db_name: tacker
+tacker_db_user: tacker
+tacker_db_pass: stack2017
+
+dashboard_hostname: controller92
 
 mng: ens160
 data: ens192
@@ -68,16 +105,18 @@ external: ens224
 
 
 swift_user: swift
-swift_dev_name: sdc
-swift_dev_path: /dev/sdc
+swift_dev_name1: sdb
+swift_dev_path1: /dev/sdb
+swift_dev_name2: sdc
+swift_dev_path2: /dev/sdc
 swift_dev_size: 50
-swift_storage_node1: 172.171.8.4
-swift_storage_node2: 172.171.8.5
-swift_hostname: controller81
+swift_storage_node1: 172.171.9.7
+swift_storage_node2: 172.171.9.8
+swift_hostname: controller92
 swift_db_user: swift
 swift_db_passwd: stack2017
 
-openfalcon_ip: 172.171.8.1
+openfalcon_ip: 172.171.9.2
 
 admin_pass: stack2017
 demo_pass: stack2017
@@ -100,6 +139,9 @@ keystone_endpoints:
     internal_url: "http://keytone_hostname:5000/v2.0"
     admin_url: "http://keystone_hostname:35357/v2.0"
 
+python3_env:
+   ansible_python_interpreter: "/usr/bin/python3"
+
 
 admin_env:
    OS_USERNAME: "admin"
@@ -108,15 +150,20 @@ admin_env:
    OS_USER_DOMAIN_NAME: "Default"
    OS_PROJECT_DOMAIN_NAME: "Default"
    OS_AUTH_URL: "http://{{ keystone_hostname }}:35357/v3"
+   OS_INTERFACE: "internal"
    OS_IDENTITY_API_VERSION: "3"
+   OS_REGION_NAME: "RegionOne"
+   OS_TENANT_NAME: "admin"
 
 node_hosts:
  "127.0.0.1      localhost\n
- 172.171.8.1    controller81\n
- 172.171.8.2    compute2\n
- 172.171.8.3    compute3\n
- 172.171.8.4    compute4\n
- 172.171.8.5    compute5\n
+ 172.171.9.2    controller92\n
+ 172.171.9.3    compute3\n
+ 172.171.9.4    compute4\n
+ 172.171.9.5    compute5\n
+ 172.171.9.6    compute6\n
+ 172.171.9.7	compute7\n
+ 172.171.9.8	compute8
    
 
  # The following lines are desirable for IPv6 capable hosts\n

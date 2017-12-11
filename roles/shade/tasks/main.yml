@@ -1,16 +1,22 @@
 ---
 
 - name: Install python-pip packages
-  command: apt-get install python-pip -y
+  apt: 
+    name: python-pip
+    state: present
   tags:
      - shade
  
 - name: Upgrade python-pip Packages
-  command: pip install --upgrade  pip
+  pip: 
+    name: pip
+    state: latest
   tags:
      - shade
 
 - name: Install python-shade Package
-  command: pip install shade==1.8.0
+  pip:
+    name: shade
+    version: 1.8.0
   tags:
      - shade
