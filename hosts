@@ -33,8 +33,5 @@ swift-storage
 cinder-storage
 
 
-#[all:vars]
-#ansible_python_interpreter=/usr/bin/python3
-
 
 
