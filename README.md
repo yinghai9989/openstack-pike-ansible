@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # openstack_ocata_ansible
 
 For install openstack ocata on ubuntu 16.04.2 with ansible2.3.2.0 （neutron use opensvswitch 2.6.2）
@@ -128,3 +129,7 @@ swift存储节点安装组件如下：
      
      
      
+=======
+# openstack-pike-ansible
+Install openstack pike  use ansible 2.4 on ubuntu 16.04.3 with openvswitch 2.8  
+>>>>>>> f066ae6771b402a2112877f41aba97eedba99e55
