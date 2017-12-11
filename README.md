@@ -12,53 +12,15 @@ For install openstack ocata on ubuntu 16.04.2 with ansible2.3.2.0 （neutron use
 
 部署拓扑 ：
 ![image](https://github.com/yinghai9989/openstack-pike-ansible/blob/master/topo.png)
-   
-controller节点安装组件如下：
+   
+相关节点安装的组件请见拓扑示意。
 
-   - ntp
-   
-   - mariadb
-   
-   - rabbitmq
-   
-   - memcache
-   
-   - shade
-   
-   - keystone
-   
-   - glance
-   
-   - nova
-   
-   - neutron
-   
-   - dashboard
-   
-   - swift
-   
-   - flavor
-        
-compute计算节点安装组件如下： 
-
-   - ntp-compute
-   
-   - nova-compute
-   
-   - neutron-compute
-   
-swift存储节点安装组件如下：
-
-   - ntp-compute
-   
-   - swift-storage 
-   
-    （在此处安装swift存储节点安装在compute4和compute5上的sdc磁盘上，当然也可以独立安装到单纯的swift存储节点上）
+注：swift和cinder节点可以安装在计算节点上。
+   此时建议计算节点上部署3块硬件。即 cinder安装在comput1，compute2 上swift存储节点安装在compute3，copmute4上。
 
 部署步骤：
 
-  【ansible安装】---【关联ssh秘钥】---【配置变量】---【开始安装openstack ocata】
-
+  【ansible安装】---【关联ssh秘钥】---【配置变量】---【开始安装openstack pike】
 
 1、【ansible安装】
 
@@ -80,44 +42,30 @@ swift存储节点安装组件如下：
  
    编辑group_vars/all： 根据实际情况填写
  
-4、【开始安装openstack ocata】
+4、【开始安装openstack pike】
+   请根据实际需要安装模块
+  控制节点上的模块
+   - barbican
+   - tacker
+   - networking-sfc
+   - mistral
+   - ceilometer  #There are problems with installation
+   计算节点上的模块
+   - networking-sfc-compute
+   - ceilometer-compute   #There are problems with installation
+   目前还有些问题在调试。
 
-   执行 bash cmd_deploy
- 
+   执行 bash cmd_deploy 
+   注在安装之前请检查一下所有节点的时间和时区是否一致，如不一致请注意
+   ansible all -m shell -a timedatectl
+  
  5、【FAQ】
  
  5.1、脚本可以分步安装
- 
-    依照先安装common 基础组件部分，然后在安装openstac ocata服务组件
-    
- 5.1.1【安装common 基础组件部分】
- 
-    ansible-playbook -i hosts_common deploy_common.yml
-    
-    如果在需要查看安装过程中输出的详细信息可以执行如下命令:
-    
-    ansible-playbook -i hosts_common deploy_common.yml -vvv
-    
- 5.1.2【安装openstac ocata服务组件】
- 
-    ansible-playbook -i hosts_ocata deploy_ocata.yml
-    
-    如果在需要查看安装过程中输出的详细信息可以执行如下命令:
-    
-    ansible-playbook -i hosts_ocata deploy_ocata.yml -vvv
+      ansible-playbook -i hosts deploy_pike.yml --tags=sshauth
+      ansible-playbook -i hosts deploy_pike.yml --tags=common
+      ...
    
 5.2、其他问题
 
    如有其他问题请联系:chen1893@163.com 或者chen1893@gmail.com
-
-
-
-
-     
-     
-     
-     
-=======
-# openstack-pike-ansible
-Install openstack pike  use ansible 2.4 on ubuntu 16.04.3 with openvswitch 2.8  
->>>>>>> f066ae6771b402a2112877f41aba97eedba99e55
