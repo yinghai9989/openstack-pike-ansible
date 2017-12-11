@@ -1,7 +1,6 @@
 # Install openstack pike use ansible 2.4 on ubuntu 16.04.3 with openvswitch 2.8
 # openstack pike ansible
 
-For install openstack ocata on ubuntu 16.04.2 with ansible2.3.2.0 （neutron use opensvswitch 2.6.2）
 
 使用ansible 2.4.2.0 在ubunut 16.04.3 64位系统上安装 openstack pike ，其中neutron网络使用openvswitch 2.8.0
 
@@ -35,10 +34,8 @@ For install openstack ocata on ubuntu 16.04.2 with ansible2.3.2.0 （neutron use
    ...
  
 3、【配置变量】
-
-   编辑hosts_common：根据部署规划填写主机ip 此处[all:var]请保持不变
  
-   编辑hosts_ocata： 根据部署规划填写主机ip
+   编辑hosts： 根据部署规划填写主机ip
  
    编辑group_vars/all： 根据实际情况填写
  
