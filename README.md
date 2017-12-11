@@ -63,7 +63,9 @@ For install openstack ocata on ubuntu 16.04.2 with ansible2.3.2.0 （neutron use
  
  5.1、脚本可以分步安装
       ansible-playbook -i hosts deploy_pike.yml --tags=sshauth
+      
       ansible-playbook -i hosts deploy_pike.yml --tags=common
+      
       ...
    
 5.2、其他问题
