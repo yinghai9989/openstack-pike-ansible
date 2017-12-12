@@ -41,19 +41,25 @@
  
 4、【开始安装openstack pike】
    请根据实际需要安装模块
+  
+  以下模块还存在一些小问题，可以选择不安装。
+  
   控制节点上的模块
-   - barbican
-   - tacker
+   
    - networking-sfc
    - mistral
    - ceilometer  #There are problems with installation
+   
    计算节点上的模块
+   
    - networking-sfc-compute
    - ceilometer-compute   #There are problems with installation
-   目前还有些问题在调试。
+   
 
    执行 bash cmd_deploy 
+   
    注在安装之前请检查一下所有节点的时间和时区是否一致，如不一致请注意
+   
    ansible all -m shell -a timedatectl
   
  5、【FAQ】
